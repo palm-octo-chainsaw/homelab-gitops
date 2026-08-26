@@ -12,4 +12,17 @@ secrets.yml
 *.key
 *.pem
 
+# The sealed-secrets private key. Every SealedSecret in this public repo is
+# ciphertext only because this file is not in it. Backed up to a password
+# manager, never here — see scripts/backup-sealing-key.sh.
+sealing-key*.yaml
+*-sealing-key.yaml
+
+# The backstop patterns above are filename-shaped, not content-shaped, and they
+# catch two files that hold no secret at all: the controller's own Application,
+# and the CHANGE_ME templates. Ciphertext under sealed/ is safe by construction.
+!apps/sealed-secrets.yaml
+!**/secrets.example.yaml
+!**/sealed/*.sealed.yaml
+
 .DS_Store

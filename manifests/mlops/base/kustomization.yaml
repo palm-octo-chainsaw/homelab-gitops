@@ -3,10 +3,12 @@ kind: Kustomization
 
 namespace: mlops
 
-# secrets.yaml is deliberately absent — it is created from secrets.example.yaml and
-# applied by hand so real credentials never enter the repo or a kustomize build.
+# mlops-secrets now lives in sealed/ as ciphertext. postgres-admin is still
+# absent on purpose: it holds the Postgres superuser password for the one-shot
+# bootstrap Jobs and should be deleted once they have run, not committed.
 resources:
   - namespace.yaml
+  - sealed/mlops-secrets.sealed.yaml
   - config.yaml
   - db-bootstrap.yaml
   - minio.yaml

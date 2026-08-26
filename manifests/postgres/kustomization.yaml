@@ -3,7 +3,9 @@ kind: Kustomization
 
 namespace: default
 
-# postgres-secret holds the superuser credentials and is applied by hand.
+# postgres-secret holds the superuser credentials. Sealed rather than hand-applied
+# since the sealed-secrets controller went in.
 resources:
   - service.yaml
   - statefulset.yaml
+  - sealed/postgres-secret.sealed.yaml

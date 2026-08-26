@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# The controller and its CRD go to kube-system, which is where the upstream
+# manifest places them and where kubeseal looks by default.
+namespace: kube-system
+
+# controller.yaml is the upstream release manifest for v0.39.1, vendored rather
+# than fetched: ArgoCD reads from git, and a URL that changes underneath a GitOps
+# repo is not a source of truth. Re-vendor on upgrade, keep the diff reviewable.
+resources:
+  - controller.yaml
+
+# Sealed secrets themselves live next to the workload they belong to
+# (manifests/mlops/sealed/, manifests/crypto-bot/sealed/), not here — a
+# SealedSecret is a resource of the app that consumes it.

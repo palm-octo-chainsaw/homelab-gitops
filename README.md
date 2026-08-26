@@ -45,18 +45,29 @@ Then verify before trusting anything: `argocd app diff crypto-bot` should be emp
 
 ## Not in git
 
-**Secrets.** Created by hand; the one part of the system not reproducible from
-this repo. A rebuild means recreating these first, then bootstrapping.
+**The sealing key.** Secrets themselves now live in this repo as SealedSecrets —
+ciphertext, safe to publish — under `manifests/*/sealed/`. What is not here, and
+can never be, is the key that decrypts them: a Secret in `kube-system` created by
+the sealed-secrets controller, exported by `scripts/backup-sealing-key.sh` and
+kept in a password manager.
 
-| Secret | Namespace | Holds |
-|---|---|---|
-| `crypto-bot-secret` | `default` | Telegram token, exchange API keys, `DATABASE_URL` |
-| `postgres-secret` | `default` | Postgres superuser credentials |
-| `mlops-secrets` | `mlops` | Per-database DSNs, MinIO credentials |
-| `postgres-admin` | `mlops` | Bootstrap Job superuser creds; delete after it runs |
+That single file is the whole disaster-recovery story. Repo plus key restores
+everything. Repo alone restores nothing.
 
-`manifests/mlops/base/secrets.example.yaml` is a `CHANGE_ME` template, excluded
-from its own kustomization. Fill in a copy, apply it, don't commit it.
+Key renewal is disabled (`--key-renew-period=0`). The controller's default is a
+fresh key every 30 days with old keys retained, which quietly makes an off-box
+backup stop covering anything sealed after it was taken, with no signal that it
+has gone stale. Rotate deliberately via `scripts/rotate-sealing-key.sh`, which
+also tells you to retake the backup and re-seal.
+
+**`postgres-admin`** in `mlops` is the exception that stays out entirely. It
+holds the Postgres superuser password for the one-shot bootstrap Jobs and should
+be deleted once they have run, not committed in any form.
+
+Adopting a Secret that already existed before the controller did needs one
+annotation — `sealedsecrets.bitnami.com/managed: "true"` — or the controller
+refuses to overwrite it and the SealedSecret sits at `Synced=False`. It fails
+safely, leaving the live Secret untouched. `scripts/seal-secrets.sh` sets it.
 
 **Ingresses.** `local/ingresses.yaml` holds the Argo, MLflow and API Ingresses.
 Their hostnames are nip.io names that encode the node's LAN and Tailscale

@@ -3,9 +3,12 @@ kind: Kustomization
 
 namespace: default
 
-# crypto-bot-secret holds the Telegram token and exchange API keys; applied by hand.
+# crypto-bot-secret holds the Telegram token and exchange API keys. It is no
+# longer applied by hand — sealed/ carries the ciphertext, and the sealed-secrets
+# controller decrypts it in-cluster.
 resources:
   - priorityclass.yaml
   - pvc.yaml
   - deployment.yaml
   - restart-cronjob.yaml
+  - sealed/crypto-bot-secret.sealed.yaml
