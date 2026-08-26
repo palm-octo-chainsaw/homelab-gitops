@@ -60,6 +60,17 @@ logs:
   persistence:
     enabled: true
     size: 3Gi
+    # The chart defaults to ReadWriteMany, because scheduler, api-server,
+    # dag-processor and every task pod mount this volume. local-path cannot
+    # provide RWX and fails with "NodePath only supports ReadWriteOnce and
+    # ReadWriteOncePod", leaving the PVC Pending forever.
+    #
+    # RWO is correct here only because there is exactly one node: several pods
+    # may mount the same RWO volume as long as they share a node. On a
+    # multi-node cluster this needs either an RWX provisioner or, better,
+    # remote logging to the MinIO already running here — which would need
+    # apache-airflow-providers-amazon added to the image.
+    accessMode: ReadWriteOnce
 
 # Injects the pipeline's own configuration — database DSNs, MLflow address, MinIO
 # credentials — into the scheduler and into every task pod.
