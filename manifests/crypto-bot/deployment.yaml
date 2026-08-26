@@ -50,7 +50,7 @@ spec:
         - name: bot
           # THIS LINE IS THE DEPLOY. crypto-bot's release workflow commits the
           # new tag here and ArgoCD rolls it out. Reverting it is a rollback.
-          image: a77878123/crypto-bot:v1.10.0
+          image: a77878123/crypto-bot:v1.10.0.1
           # Release tags are immutable, so re-pulling every restart bought
           # nothing. IfNotPresent reuses the cached 600 MB chromium layer.
           imagePullPolicy: IfNotPresent
