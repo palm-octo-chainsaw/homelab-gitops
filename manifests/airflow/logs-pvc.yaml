@@ -1,0 +1,28 @@
+# Airflow's task-log volume, declared here rather than by the chart.
+#
+# The chart hardcodes ReadWriteMany on the PVC it creates, and exposes no knob to
+# change it — the values schema rejects logs.persistence.accessMode outright.
+# k3s ships local-path, which supports only RWO and RWOP, so the chart's own
+# claim can never be provisioned here: "NodePath only supports ReadWriteOnce and
+# ReadWriteOncePod".
+#
+# Creating the claim ourselves and pointing logs.persistence.existingClaim at it
+# sidesteps that. RWO is sufficient because this is a single node: the scheduler,
+# api-server, dag-processor and every KubernetesExecutor task pod all land on the
+# same node, and several pods may share an RWO volume when they do.
+#
+# On a multi-node cluster this needs an RWX provisioner, or remote logging to the
+# MinIO already running here — which would mean adding
+# apache-airflow-providers-amazon to the image and configuring a connection.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: airflow-logs
+  namespace: mlops
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 3Gi
