@@ -1,0 +1,30 @@
+# Argo Workflows v4.1.2 — upstream install plus this cluster's overlays.
+#
+# ServerSideApply is required: the Workflow CRD exceeds the 262144-byte limit on
+# the last-applied-configuration annotation, so client-side apply fails with
+# "metadata.annotations: Too long".
+#
+# Auto-sync off until the first diff is verified — this was installed by hand.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argo-workflows
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: homelab
+
+  source:
+    repoURL: https://github.com/palm-octo-chainsaw/homelab-gitops.git
+    targetRevision: master
+    path: manifests/argo-workflows
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argo
+
+  syncPolicy:
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=true

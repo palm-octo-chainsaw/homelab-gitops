@@ -1,0 +1,32 @@
+# Applies sql/ migrations against the mlops database. Runs after db-bootstrap and
+# again after any schema change; `schema_migrations` makes reruns no-ops.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+  namespace: mlops
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: mlops-crypto/pipelines:dev
+          imagePullPolicy: Never
+          args: ["migrate"]
+          envFrom:
+            - configMapRef: { name: mlops-env }
+            - secretRef: { name: mlops-secrets }
+          volumeMounts:
+            - name: pipeline-config
+              mountPath: /app/config
+              readOnly: true
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 512Mi }
+      volumes:
+        - name: pipeline-config
+          configMap:
+            name: mlops-pipeline-config

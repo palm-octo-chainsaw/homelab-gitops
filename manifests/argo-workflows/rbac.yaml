@@ -1,0 +1,37 @@
+# Argo runs every step as a pod under this ServiceAccount in the mlops namespace.
+# The controller itself lives in the argo namespace and is cluster-scoped, so the
+# only thing needed here is the executor's own permissions.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argo-workflow
+  namespace: mlops
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: argo-workflow
+  namespace: mlops
+rules:
+  # The emissary executor reports each step's outcome by writing a
+  # workflowtaskresult; without this every step fails at the finish line.
+  - apiGroups: ["argoproj.io"]
+    resources: ["workflowtaskresults"]
+    verbs: ["create", "patch"]
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argo-workflow
+  namespace: mlops
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: argo-workflow
+subjects:
+  - kind: ServiceAccount
+    name: argo-workflow
+    namespace: mlops

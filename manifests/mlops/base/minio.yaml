@@ -1,0 +1,133 @@
+# MinIO is the one component that grows without bound, so it is pinned to /home
+# (185Gi free) with an explicit local PV instead of the default local-path class,
+# which provisions onto / where only ~14Gi remains.
+#
+# Create the directory on the node first:
+#   sudo mkdir -p /home/mlops/minio && sudo chown 1000:1000 /home/mlops/minio
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: minio-home
+spec:
+  capacity:
+    storage: 40Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-home
+  local:
+    path: /home/mlops/minio
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: ["archlinux"]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-data
+  namespace: mlops
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-home
+  volumeName: minio-home
+  resources:
+    requests:
+      storage: 40Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: mlops
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: minio
+          image: minio/minio:latest
+          args: ["server", "/data", "--console-address", ":9001"]
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mlops-secrets
+                  key: AWS_ACCESS_KEY_ID
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mlops-secrets
+                  key: AWS_SECRET_ACCESS_KEY
+          ports:
+            - { name: api, containerPort: 9000 }
+            - { name: console, containerPort: 9001 }
+          volumeMounts:
+            - { name: data, mountPath: /data }
+          readinessProbe:
+            httpGet: { path: /minio/health/ready, port: api }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 1Gi }
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: minio-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: mlops
+spec:
+  selector:
+    app: minio
+  ports:
+    - { name: api, port: 9000, targetPort: api }
+    - { name: console, port: 9001, targetPort: console }
+---
+# Creates the artifact bucket once MinIO answers. Idempotent.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-bucket
+  namespace: mlops
+spec:
+  backoffLimit: 5
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: mc
+          image: minio/mc:latest
+          envFrom:
+            - secretRef: { name: mlops-secrets }
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              until mc alias set local http://minio.mlops.svc.cluster.local:9000 \
+                "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY"; do
+                echo "waiting for minio"; sleep 5
+              done
+              mc mb --ignore-existing local/mlflow
+              echo bucket ready
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 128Mi }

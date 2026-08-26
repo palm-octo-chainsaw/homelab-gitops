@@ -1,0 +1,14 @@
+# Headless, backing a StatefulSet. Consumers use the stable DNS name; the mlops
+# namespace reaches it cross-namespace via the FQDN.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: default
+spec:
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432

@@ -1,0 +1,26 @@
+# Permissive on resource kinds by necessity — this repo installs CRDs,
+# ClusterRoles and a PriorityClass. The real restriction is sourceRepos.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: homelab
+  namespace: argocd
+  # Without this, deleting the project cascades into deleting every Application.
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Single-node k3s homelab — trading bot, Postgres, mlops stack.
+
+  sourceRepos:
+    - https://github.com/palm-octo-chainsaw/homelab-gitops.git
+
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: "*"
+
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

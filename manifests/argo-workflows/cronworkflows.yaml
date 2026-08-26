@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: CronWorkflow
+metadata:
+  name: hourly-pipeline
+  namespace: mlops
+spec:
+  # v4 dropped the singular `schedule` field in favour of a list.
+  schedules:
+    - "7 * * * *"
+  timezone: UTC
+  # A run that is still going when the next hour comes around means something is
+  # wrong; skipping is safer than piling up overlapping ingests.
+  # Created suspended. Nothing should fire on a schedule until the database is
+  # seeded and both DAGs have been run once by hand:
+  #   argo resume -n mlops cronwf/<name>
+  suspend: true
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  workflowSpec:
+    serviceAccountName: argo-workflow
+    entrypoint: hourly
+    activeDeadlineSeconds: 1800
+    workflowTemplateRef:
+      name: mlops-crypto
+---
+apiVersion: argoproj.io/v1alpha1
+kind: CronWorkflow
+metadata:
+  name: daily-training
+  namespace: mlops
+spec:
+  schedules:
+    - "30 2 * * *"
+  timezone: UTC
+  # Created suspended. Nothing should fire on a schedule until the database is
+  # seeded and both DAGs have been run once by hand:
+  #   argo resume -n mlops cronwf/<name>
+  suspend: true
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 5
+  workflowSpec:
+    serviceAccountName: argo-workflow
+    entrypoint: daily
+    activeDeadlineSeconds: 5400
+    workflowTemplateRef:
+      name: mlops-crypto

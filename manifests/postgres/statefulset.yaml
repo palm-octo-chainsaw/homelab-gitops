@@ -1,0 +1,52 @@
+# Shared Postgres: the crypto-bot `cryptobot` database and the mlops databases
+# all live here.
+#
+# Adopted from a StatefulSet created by hand on 2026-05-06 that has carried live
+# data since. This is a faithful copy of that object, not a fresh design —
+# selector, serviceName and volumeClaimTemplates are immutable, so changing them
+# makes every future sync fail rather than rolling the workload.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: default
+spec:
+  replicas: 1
+  serviceName: postgres
+  selector:
+    matchLabels:
+      app: postgres
+  # Matches the default, stated explicitly: deleting this must not take the data.
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          # Credentials come from `postgres-secret`, which is not in this repo.
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+          env:
+            # A subdirectory: initdb refuses a mount root containing lost+found.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: 10Gi

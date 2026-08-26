@@ -1,0 +1,32 @@
+# ArgoCD managing itself (v3.5.1).
+#
+# Auto-sync is off and should stay off: a bad sync here removes the thing that
+# would fix it — pruning or restarting repo-server/application-controller
+# mid-sync leaves nothing running to reconcile. Recovery is a manual apply of
+# the upstream install.yaml.
+#
+# Still worth checking in: it records the installed version and makes upgrades a
+# reviewed diff. ServerSideApply for the same CRD size reason as Argo Workflows.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  # No resources-finalizer on purpose — it would make deleting this Application
+  # uninstall ArgoCD, including the controller doing the deleting.
+spec:
+  project: homelab
+
+  source:
+    repoURL: https://github.com/palm-octo-chainsaw/homelab-gitops.git
+    targetRevision: master
+    path: manifests/argocd
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+
+  syncPolicy:
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=false

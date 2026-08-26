@@ -1,0 +1,12 @@
+# The bot is the only production workload on this node; everything else runs at
+# the default priority of 0. Kubelet sorts eviction candidates by priority
+# first, so at 0 the bot was picked ahead of the batch jobs filling the disk.
+# Kept well below system-cluster-critical (2000000000).
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: crypto-bot-critical
+value: 100000
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
+description: "Single-replica production trading bot; evict batch workloads first."

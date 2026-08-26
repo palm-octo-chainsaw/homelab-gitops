@@ -1,0 +1,77 @@
+# One-shot: create the mlops and mlflow databases plus the roles that own them,
+# inside the Postgres instance the trading bot already uses.
+#
+# Everything is IF NOT EXISTS / DO-block guarded so a rerun is harmless. It never
+# touches the cryptobot database beyond granting the read-only role CONNECT.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-bootstrap
+  namespace: mlops
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: db-bootstrap
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: psql
+          image: postgres:16
+          env:
+            - name: PGHOST
+              value: postgres.default.svc.cluster.local
+            - name: PGPORT
+              value: "5432"
+            - name: PGDATABASE
+              value: postgres
+          envFrom:
+            - secretRef:
+                name: postgres-admin
+          command: ["bash", "-euo", "pipefail", "-c"]
+          args:
+            - |
+              # Roles are created from the shell rather than a DO block: psql does
+              # not substitute :variables inside dollar-quoted text, and the kubelet
+              # rewrites a bare $$ to a single $ before psql ever sees it. Existing
+              # roles get ALTER so the password always matches what is in the
+              # secret, which makes a secret rotation a rerun of this Job.
+              create_role() {
+                if psql -tAc "SELECT 1 FROM pg_roles WHERE rolname = '$1'" | grep -q 1; then
+                  psql -v ON_ERROR_STOP=1 -c "ALTER ROLE $1 WITH LOGIN PASSWORD '$2'"
+                  echo "role $1 updated"
+                else
+                  psql -v ON_ERROR_STOP=1 -c "CREATE ROLE $1 LOGIN PASSWORD '$2'"
+                  echo "role $1 created"
+                fi
+              }
+              create_role mlops "$MLOPS_PASSWORD"
+              create_role mlops_reader "$READER_PASSWORD"
+
+              # CREATE DATABASE cannot run inside a transaction block, hence the
+              # separate invocations and the grep-guard instead of IF NOT EXISTS.
+              for db in mlops mlflow; do
+                if ! psql -tAc "SELECT 1 FROM pg_database WHERE datname = '$db'" | grep -q 1; then
+                  psql -v ON_ERROR_STOP=1 -c "CREATE DATABASE $db OWNER mlops"
+                  echo "created $db"
+                else
+                  echo "$db already present"
+                fi
+              done
+
+              psql -v ON_ERROR_STOP=1 -d cryptobot <<'SQL'
+              GRANT CONNECT ON DATABASE cryptobot TO mlops_reader;
+              GRANT USAGE ON SCHEMA public TO mlops_reader;
+              GRANT SELECT ON ALL TABLES IN SCHEMA public TO mlops_reader;
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public
+                GRANT SELECT ON TABLES TO mlops_reader;
+              SQL
+              echo "bootstrap complete"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi

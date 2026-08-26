@@ -1,0 +1,25 @@
+# The image ships without config/ or .trw_session/, so these hold the bot's
+# on-disk state: targets.json, and the Playwright TRW login reused across
+# restarts to avoid hitting device limits.
+# storageClassName omitted -> cluster default (local-path).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: crypto-bot-config
+  namespace: default
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 256Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: crypto-bot-trw-session
+  namespace: default
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 256Mi

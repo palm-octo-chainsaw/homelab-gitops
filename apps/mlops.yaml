@@ -1,0 +1,30 @@
+# MinIO, MLflow, the inference API, and the one-shot bootstrap/migration Jobs.
+#
+# Auto-sync off until the first diff is verified. A Job's pod template is
+# immutable and both Jobs have already run here, so any spec mismatch fails
+# every sync until the completed Job is deleted. Fix is either to converge the
+# spec or make them Sync hooks with hook-delete-policy: BeforeHookCreation.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlops
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: homelab
+
+  source:
+    repoURL: https://github.com/palm-octo-chainsaw/homelab-gitops.git
+    targetRevision: master
+    # base/ only — jobs/backfill.yaml is run ad hoc and would be recreated on
+    # every sync if managed here.
+    path: manifests/mlops/base
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlops
+
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false  # base/namespace.yaml creates it

@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: mlops
+
+# secrets.yaml is deliberately absent — it is created from secrets.example.yaml and
+# applied by hand so real credentials never enter the repo or a kustomize build.
+resources:
+  - namespace.yaml
+  - config.yaml
+  - db-bootstrap.yaml
+  - minio.yaml
+  - mlflow.yaml
+  - api.yaml
+  - migrate-job.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: mlops-crypto

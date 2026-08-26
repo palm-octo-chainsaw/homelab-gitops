@@ -1,0 +1,28 @@
+# Shared Postgres, adopted from a hand-created StatefulSet holding live data.
+#
+# Auto-sync off until a first diff is verified: most of a StatefulSet spec is
+# immutable, so any mismatch makes self-heal retry the same failing patch
+# forever. Prune stays off regardless — this is the one workload where being
+# wrong costs data rather than a restart.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: postgres
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: homelab
+
+  source:
+    repoURL: https://github.com/palm-octo-chainsaw/homelab-gitops.git
+    targetRevision: master
+    path: manifests/postgres
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false

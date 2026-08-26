@@ -1,0 +1,15 @@
+# Ingresses whose nip.io hostnames encode private addresses. Applied by hand.
+local/
+
+# Backstop against committing filled-in secret copies. Not a substitute for
+# reading the diff.
+secrets.yaml
+secrets.yml
+*-secrets.yaml
+*.local.yaml
+.env
+.env.*
+*.key
+*.pem
+
+.DS_Store

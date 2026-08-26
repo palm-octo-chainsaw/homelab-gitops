@@ -1,0 +1,98 @@
+# The bot is outbound-only (Telegram long-poll + exchange APIs), so no Service.
+# Exactly one instance may poll the Telegram token at a time, hence replicas: 1
+# and Recreate — a RollingUpdate would briefly run two pods and cause getUpdates
+# 409 conflicts.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crypto-bot
+  namespace: default
+  labels:
+    app: crypto-bot
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: crypto-bot
+  template:
+    metadata:
+      labels:
+        app: crypto-bot
+    spec:
+      # Without this the bot sits at the cluster-wide default of 0 and kubelet
+      # evicts it ahead of the batch workloads that fill the disk.
+      priorityClassName: crypto-bot-critical
+      # Seeds a fallback targets.json so an empty volume can't crash-loop the
+      # bot (load_json has no missing-file fallback). Only fires if absent.
+      initContainers:
+        - name: seed-config
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - '[ -f /config/targets.json ] || echo "{\"USDC\": 100.0}" > /config/targets.json'
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      # ndots:5 is the cluster default, so every external name is tried against
+      # all search domains first — four lookups per host, each able to time out.
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
+          - name: timeout
+            value: "2"
+          - name: attempts
+            value: "2"
+      containers:
+        - name: bot
+          # THIS LINE IS THE DEPLOY. crypto-bot's release workflow commits the
+          # new tag here and ArgoCD rolls it out. Reverting it is a rollback.
+          image: a77878123/crypto-bot:v1.10.0
+          # Release tags are immutable, so re-pulling every restart bought
+          # nothing. IfNotPresent reuses the cached 600 MB chromium layer.
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: crypto-bot-secret
+          # A single asyncio loop: if it wedges the process stays up and the
+          # container still reports Running, so nothing restarts it. The
+          # heartbeat stops being stamped and this probe notices.
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - test $(( $(date +%s) - $(cat /app/logs/heartbeat) )) -lt 300
+            initialDelaySeconds: 120
+            periodSeconds: 60
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+            - name: trw-session
+              mountPath: /app/.trw_session
+            - name: logs
+              mountPath: /app/logs
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+              # An absent request counts as zero when kubelet ranks eviction
+              # victims, which is why a pod writing 2.4 MB was a candidate.
+              ephemeral-storage: 1Gi
+            limits:
+              memory: 2Gi  # headroom for the Playwright/Chromium scrape
+              ephemeral-storage: 2Gi
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: crypto-bot-config
+        - name: trw-session
+          persistentVolumeClaim:
+            claimName: crypto-bot-trw-session
+        - name: logs
+          emptyDir: {}

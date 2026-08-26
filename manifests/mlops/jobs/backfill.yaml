@@ -1,0 +1,36 @@
+# One-off history seed. Not part of the kustomize base — it is run by hand when a
+# new symbol is added or a fresh database is stood up, and deleted afterwards.
+#
+#   kubectl -n mlops delete job backfill --ignore-not-found
+#   kubectl apply -f k8s/jobs/backfill.yaml
+#   kubectl -n mlops logs -f job/backfill
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: backfill
+  namespace: mlops
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: backfill
+          image: mlops-crypto/pipelines:dev
+          imagePullPolicy: Never
+          args: ["backfill", "--days", "180"]
+          envFrom:
+            - configMapRef: { name: mlops-env }
+            - secretRef: { name: mlops-secrets }
+          volumeMounts:
+            - name: pipeline-config
+              mountPath: /app/config
+              readOnly: true
+          resources:
+            requests: { cpu: 200m, memory: 512Mi }
+            limits: { memory: 1Gi }
+      volumes:
+        - name: pipeline-config
+          configMap:
+            name: mlops-pipeline-config

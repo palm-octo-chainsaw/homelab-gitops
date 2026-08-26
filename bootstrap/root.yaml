@@ -1,0 +1,32 @@
+# Root of the app-of-apps — the only object applied by hand. Watches apps/ and
+# creates one child Application per workload.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: homelab
+
+  source:
+    repoURL: https://github.com/palm-octo-chainsaw/homelab-gitops.git
+    targetRevision: master
+    path: apps
+    # apps/ is flat and holds only Applications; nothing under manifests/ can
+    # be picked up as a stray root-owned resource.
+    directory:
+      recurse: false
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+
+  syncPolicy:
+    automated:
+      # This owns only the child Application objects. Pruning one deletes that
+      # Application, and its finalizer then deletes the workload — so removing
+      # a file from apps/ is a real uninstall. Intended, but know it.
+      selfHeal: true
+      prune: true

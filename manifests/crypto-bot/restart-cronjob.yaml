@@ -1,0 +1,71 @@
+# Nightly recycle of the bot's long-lived Playwright session and Telegram poll.
+#
+# 00:00 Europe/Sofia is deliberate: the daily RSPS signal posts ~00:12 UTC and
+# the poller's first run is one full interval after boot, so restarting near the
+# signal would delay picking it up.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: crypto-bot-restarter
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: crypto-bot-restarter
+  namespace: default
+rules:
+  # `rollout restart` patches the pod template, then reads back the status.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["crypto-bot"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: crypto-bot-restarter
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: crypto-bot-restarter
+    namespace: default
+roleRef:
+  kind: Role
+  name: crypto-bot-restarter
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: crypto-bot-nightly-restart
+  namespace: default
+spec:
+  schedule: "0 0 * * *"
+  timeZone: Europe/Sofia
+  concurrencyPolicy: Forbid
+  # A missed window (node down) should not fire a late restart on boot.
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          serviceAccountName: crypto-bot-restarter
+          restartPolicy: Never
+          containers:
+            - name: kubectl
+              image: registry.k8s.io/kubectl:v1.35.4
+              command:
+                - kubectl
+                - rollout
+                - restart
+                - deployment/crypto-bot
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi

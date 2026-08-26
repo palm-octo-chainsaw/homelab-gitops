@@ -1,0 +1,43 @@
+# The trading bot. Its image tag is committed by crypto-bot's release workflow,
+# so a `v*.*.*` push becomes a rollout with no `kubectl set image` anywhere.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crypto-bot
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: homelab
+
+  source:
+    repoURL: https://github.com/palm-octo-chainsaw/homelab-gitops.git
+    targetRevision: master
+    path: manifests/crypto-bot
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+
+  ignoreDifferences:
+    # The nightly CronJob stamps this annotation via `rollout restart`. It only
+    # exists live; without this ArgoCD reads it as drift and fights the restart.
+    - group: apps
+      kind: Deployment
+      name: crypto-bot
+      namespace: default
+      jsonPointers:
+        - /spec/template/metadata/annotations/kubectl.kubernetes.io~1restartedAt
