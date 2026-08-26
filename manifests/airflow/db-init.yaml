@@ -1,0 +1,61 @@
+# One-shot: give Airflow its own role and database inside the Postgres the rest
+# of the cluster already uses. Guarded so a rerun is harmless, and it never
+# touches the mlops or cryptobot databases.
+#
+# Reuses the postgres-admin secret created for the mlops bootstrap. Delete that
+# secret once both bootstraps have run — it is the only object outside the
+# default namespace holding the superuser password.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: airflow-db-init
+  namespace: mlops
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: psql
+          image: postgres:16
+          env:
+            - name: PGHOST
+              value: postgres.default.svc.cluster.local
+            - name: PGPORT
+              value: "5432"
+            - name: PGDATABASE
+              value: postgres
+            - name: AIRFLOW_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: airflow-db
+                  key: AIRFLOW_PASSWORD
+          envFrom:
+            - secretRef:
+                name: postgres-admin
+          command: ["bash", "-euo", "pipefail", "-c"]
+          args:
+            - |
+              if psql -tAc "SELECT 1 FROM pg_roles WHERE rolname = 'airflow'" | grep -q 1; then
+                psql -v ON_ERROR_STOP=1 -c "ALTER ROLE airflow WITH LOGIN PASSWORD '$AIRFLOW_PASSWORD'"
+                echo "role airflow updated"
+              else
+                psql -v ON_ERROR_STOP=1 -c "CREATE ROLE airflow LOGIN PASSWORD '$AIRFLOW_PASSWORD'"
+                echo "role airflow created"
+              fi
+
+              if ! psql -tAc "SELECT 1 FROM pg_database WHERE datname = 'airflow'" | grep -q 1; then
+                psql -v ON_ERROR_STOP=1 -c "CREATE DATABASE airflow OWNER airflow"
+                echo "database airflow created"
+              else
+                echo "database airflow already present"
+              fi
+
+              # Airflow's migrations create objects in public, which Postgres 15+
+              # no longer grants to non-owners by default.
+              psql -v ON_ERROR_STOP=1 -d airflow -c "GRANT ALL ON SCHEMA public TO airflow"
+              echo "airflow db ready"
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 128Mi }

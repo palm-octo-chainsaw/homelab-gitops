@@ -1,0 +1,14 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: airflow-fernet-key
+  namespace: mlops
+spec:
+  encryptedData:
+    fernet-key: AgBkO3ixHSjaFG7uHEXIv33da8SyDVrDpxxxSYdGudoRAPNoYQ3hreXCdoaLkiI00/RElaSxRBzjv8HCdfOi9U2i7e8OATxhZ6Vb8FV8YeqJgVvKjuHsyE5kLt4t5A8b2y4BUBa1QicnF0TdiB1VAu7am/B+DRRNICXk/I6E8Z1hqqsHOaXb25lEFEIWC7jCibMWWzhr4SIW5AHHSDKpbAQc8MV3LWoJXSsI+xf974jG5BXWoPHiWsCPZj/9dgy1ix0kRBL1Vlq5vqQdwwo4pmFJEXyJgC7RGvC8R8rr9i56uf+kBmkG0ptcTsMoYaOEGjs+i26w5d2gZyajl4NK0hsqhCYoJIUBiWOXjLz6Yfupsr6zTQtb3OapYFulHKR1yvmm2oCiu+t++Pb6w3MBbxfMf7npo90S75/emaPymkjRKdEfdvDtMuvA8mijpVqvyX+SVVeHnUEatUOvmQiVR5y82AL4WoaTmO/jrs3yNqFjuCLVneBo1KKK2wEVnXFNMR4tb2yr+NPw8TwGLlUJCOYdTeJ31hNyux7eIgaaGfx6CrdnNctfcjDEGIlhmRZNSIDDXWhX2XFmAw8L1w+PnlLIHxcjsk0GnUtDbu6WIbhErf1i6QFPM1OZmiBdM5NCrsbZihZdiGXYKS9RO+ZKjzmBW3I3eHNIqHjne9LoKSusqiyrZQyFrX3hZJbOEU139BswCcVwNuLQayObigW4P+t6Wl8iXCip4IYwuzTOqbxosIM1GTCdexRqpp+AZQ==
+  template:
+    metadata:
+      name: airflow-fernet-key
+      namespace: mlops
+    type: Opaque

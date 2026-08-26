@@ -1,0 +1,35 @@
+# The chart's own ingress is left off so the host list here matches the pattern
+# used by every other workload: the LAN address plus the Tailscale address, both
+# nip.io names that encode their own IP and need no DNS record.
+#
+# Airflow 3 serves the UI from the api-server component, not a webserver.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: airflow
+  namespace: mlops
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: airflow.192.168.1.34.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: airflow-api-server
+                port:
+                  number: 8080
+    - host: airflow.100.89.14.18.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: airflow-api-server
+                port:
+                  number: 8080

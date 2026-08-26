@@ -1,0 +1,14 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: airflow-webserver
+  namespace: mlops
+spec:
+  encryptedData:
+    webserver-secret-key: AgA1AnigcnNLy18ZYmTyKA4/CkxCSGlnp2g6KNYODqO01eZJ0ZjGYoMssJJZ6ESmnowH1C2EjhO5WVa7KdjGMiCSs5DnTyGNpKXaZVOpdbofvdwai6acuikf4J3odvOB9BZLjLVRxvRuAhcEFCHf6EpqJby9EIvfA49JE/CsWGolG/Q5e8zH00nhuzXE7d1urXvWyxr023QzUevTpDaMhJVFNX8OTpWSWckcRQhJ9Oitx5+bnBVD9yVnQMRB9VpFsL9w/LwjtMsokfBhMRv20uzH3S13d93QbbrK6Vlvih9SCUuN0nUgJ2UEHGAaVsT31BlqjNGVOAjK9/4i4yGoozB91yKVP6pQpoBek0lhKx+uspJYx3AMxCXNCX79/MT1E3TMm+rk0eudzHFWTDrYse08+OeKF1RJ+2Hk5kdH+eKt8aCMY2ur/iz62amO6lhjuOTQ7MPQA/TsiIktO86vMBgeErfU75guSBeY60cG/LYDPWcrzxJsw5JfUQDaR2BMv2n9ZKp9nyXIdIgE88ahJQqm5TDt1vMRNfXlm9HESuhxSUTwBX1A7JpWX5U7K4XYQ7Z7/LNsTYWTKUr0xMtB6E2msGE5KBItvZ/CRwSiGVoSXUykSq5li1kVTnqAWYqr0a9NsFqeAAPgLt3P0+BTfj7X3MZ8fWeFxo2xyl0iJFxQgPEDyGbzoa24IqMe8F74VNlMGiL/jjztAQmX5cn+YNngoRe/sJYJEmSEz9ZohyCzzw==
+  template:
+    metadata:
+      name: airflow-webserver
+      namespace: mlops
+    type: Opaque

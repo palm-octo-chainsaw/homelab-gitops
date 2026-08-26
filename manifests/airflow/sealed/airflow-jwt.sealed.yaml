@@ -1,0 +1,14 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: airflow-jwt
+  namespace: mlops
+spec:
+  encryptedData:
+    jwt-secret: AgC29RfSacaJtg7cghdxktle5oxbVRyT/zi5/8i7IhDbol6djBssak/BwWCNFWZ1zlhBbCm2MRejHD+UJLqkJqCVxv68QV98AvJV4yEETfoz4VxtdD68ynimU4GA2TUXOwkWKs3LEKzlI8vYVNJyaV5ZZozeHhJPgcIkFUWkC7tHUFQ7bg0V3xVCKTAARhawsJyghtajHhstf9Ms+qYctYE5dUPsn64uT1y94u1g5eJ9dkzQHML5mYBzwlnOFD5/MfGzoLaOdQPknkwIdrukz+upmnkRNnujCYf3HdTH5laSMAzwGGJqmk9H9lBCYpH9vRR60r+uZjK/kqlumnnE6j7pnVGRQ/3Su906YAzzVgMLdq9dZ97LXv8HI0o6bxpchFaXmq7D25a2Dz9C5+Y1lDvE11WIPbr/4H+e7HK/UlclK//NlI9zdX96+47wzMR2M/GxIY9qjefYAOLbbev+vYtw0W4Wu0tIPsXOBs9KY3l8zGOed2i0Wjot3p0uiICmRlNJK9huN82FZJQ5c8Q8SzVmQbrXQMwVaTsll/OsjP6bbDuTJy4QkKp13adf9MVXruHJNbSfPMpsrbh7YRrFUPutorasYddqvmB6tXiI2PJSxCPH6m2UG1rDrxiGz/c19+Rvq6OEFWmo7w7lAAg46kK+QyhhZ6O62EBGEDw+4jGzcGtCUnWTPJtRCngqyTs9CmYnD26y/FtbvwPZ6WS/EnyatoYXR8QBC6tiznyENGopws+o+k1seSy1P+r3Nz6l9+hPjmJF4STNWVS8+DmlO8YZ
+  template:
+    metadata:
+      name: airflow-jwt
+      namespace: mlops
+    type: Opaque

@@ -1,0 +1,52 @@
+# Airflow 3.2.2 via the official chart, orchestrating the mlops-crypto pipeline.
+# Replaces the Argo Workflows CronWorkflows that drove it previously.
+#
+# Three sources: the upstream chart, this repo as a values reference, and this
+# repo again for the resources the chart does not cover (the database bootstrap
+# Job and the ingress).
+#
+# Auto-sync deliberately off, for the same reason as the mlops app: the chart's
+# migrate and create-user Jobs are ArgoCD sync hooks, and a self-healing app
+# would re-run them on every drift check.
+#
+# Requires, created by hand before the first sync (see
+# manifests/airflow/secrets.example.yaml):
+#   airflow-metadata, airflow-fernet-key, airflow-jwt, airflow-api-secret,
+#   airflow-webserver, airflow-db
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: airflow
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: homelab
+
+  sources:
+    - repoURL: https://airflow.apache.org
+      chart: airflow
+      targetRevision: 1.22.0
+      helm:
+        releaseName: airflow
+        valueFiles:
+          - $values/manifests/airflow/values.yaml
+
+    - repoURL: https://github.com/palm-octo-chainsaw/homelab-gitops.git
+      targetRevision: master
+      ref: values
+
+    - repoURL: https://github.com/palm-octo-chainsaw/homelab-gitops.git
+      targetRevision: master
+      path: manifests/airflow
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlops
+
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false
+      # The chart ships a large CRD-free but annotation-heavy set of objects and
+      # patches them in place across upgrades.
+      - ServerSideApply=true

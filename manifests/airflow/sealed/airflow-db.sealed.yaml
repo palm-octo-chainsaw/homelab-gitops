@@ -1,0 +1,14 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: airflow-db
+  namespace: mlops
+spec:
+  encryptedData:
+    AIRFLOW_PASSWORD: AgCSWbu+hh30r8KGStR9tSsH/b201XKL0roBZZYoTP0KcgvpDXslADLOB01GdydflAuTD6OhecYQ6RnJQw+XHyWXdl1esifMrxsGfKvLFJmZZuHKrygnVKf05cRwcSkuqwTliH5cQ9llzML0QJLRZgAibYqCTGNT5TZsW3FyRoT/qzpTw07jnqZe7NCGqfBQE005T5gpT8hZEvLopbQBUx3Mi8RAAQKpOjv9jEdfxaICaciy8JRRZO2T1qXMX5Z5Sbn4iBNnIyQBuTGpZMRuGKE51B1BkH/JX/RUPK2AzQAwCSXQn/HNoGry7ciYvnU4WeQD/ReDZkEAAR4Fvqw7dvxgJ04R/zwEkw4dDuIUtN9pLZTxc5+sn6WsgFIlMhxNsfsmr1c11F6rn2jdj5ST/uXwbBA1+WtP6VNnOicbomYLiw/4aq3lbramjoNumY7ThbOpWa4OdGCu8lptFrd2N4IETnm0JW+5/UzeFZUS5g7LMaZb0MeZQQDCoHwiiC9SoPk9b2Ug5hlnAMqEQ+7UHEyzqKmN8gNGepuq03AlNWtAbh0JZpeEfGsCBfIyndweQPuJss5ECwVLwkRXo8ejZDxkoE7XN6GFAu/3OdNRFU1DmoG4pezE82cwDc1DpNZyvVSOTIM+NzKBOUYWTvS2g9LUlTRXyhvILZK7YHAfG14qP3Vc+oa5XBY+gFHqENtLUlNb78o2QCVg2i7g0EpxaUP8t9WKHcsvSBD21tvbRv893A==
+  template:
+    metadata:
+      name: airflow-db
+      namespace: mlops
+    type: Opaque
