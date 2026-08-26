@@ -14,5 +14,11 @@ resources:
   - api.yaml
   - migrate-job.yaml
 
-commonLabels:
-  app.kubernetes.io/part-of: mlops-crypto
+# `labels` rather than the deprecated `commonLabels`, which also writes into
+# spec.selector — immutable on Deployments that already exist. These workloads
+# were applied from the raw files and carry no part-of label, so commonLabels
+# made every sync fail on the selector.
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: mlops-crypto
+    includeSelectors: false

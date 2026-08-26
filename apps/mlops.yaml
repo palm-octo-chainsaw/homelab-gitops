@@ -1,9 +1,13 @@
 # MinIO, MLflow, the inference API, and the one-shot bootstrap/migration Jobs.
 #
-# Auto-sync off until the first diff is verified. A Job's pod template is
-# immutable and both Jobs have already run here, so any spec mismatch fails
-# every sync until the completed Job is deleted. Fix is either to converge the
-# spec or make them Sync hooks with hook-delete-policy: BeforeHookCreation.
+# Auto-sync deliberately off. A first sync is safe — it adds a part-of label to
+# 13 resources — but the minio-bucket Job sets ttlSecondsAfterFinished, so it
+# deletes itself an hour after each run and the app then reports OutOfSync
+# forever. With auto-sync that becomes an hourly recreate loop.
+#
+# Fix before turning this on: make the three Jobs Sync hooks
+# (argocd.argoproj.io/hook: Sync, hook-delete-policy: BeforeHookCreation) so
+# ArgoCD stops tracking them as drift.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

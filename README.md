@@ -20,15 +20,15 @@ manifests/              the Kubernetes resources themselves
 
 | App | Path | Auto-sync | Notes |
 |---|---|---|---|
-| `crypto-bot` | `manifests/crypto-bot` | **yes**, prune + self-heal | Image tag committed by CI |
-| `postgres` | `manifests/postgres` | no | Live data; adopted from a hand-created StatefulSet |
-| `mlops` | `manifests/mlops/base` | no | Contains completed Jobs with immutable specs |
-| `argo-workflows` | `manifests/argo-workflows` | no | Upstream v4.1.2 + local overlays |
+| `crypto-bot` | `manifests/crypto-bot` | self-heal + prune | Image tag committed by CI |
+| `postgres` | `manifests/postgres` | self-heal | Live data, so prune stays off |
+| `argo-workflows` | `manifests/argo-workflows` | self-heal | Upstream v4.1.2 + overlays |
+| `mlops` | `manifests/mlops/base` | no | Self-deleting Job would cause an hourly recreate loop |
 | `argocd` | `manifests/argocd` | no, permanently | Self-management |
 
-Only `crypto-bot` self-heals today. The rest are checked in so their state is
-recorded and upgrades become reviewed diffs; each needs its first diff eyeballed
-before it is trusted to reconcile itself. Reasons are in each `apps/` file.
+`postgres` and `argo-workflows` reproduce live state byte-identically, which is
+why they are trusted to self-heal; neither prunes. `mlops` and `argocd` need the
+fixes described in their `apps/` files before auto-sync is safe.
 
 ## Bootstrap
 

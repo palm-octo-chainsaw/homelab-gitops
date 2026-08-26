@@ -1,9 +1,10 @@
 # Shared Postgres, adopted from a hand-created StatefulSet holding live data.
 #
-# Auto-sync off until a first diff is verified: most of a StatefulSet spec is
-# immutable, so any mismatch makes self-heal retry the same failing patch
-# forever. Prune stays off regardless — this is the one workload where being
-# wrong costs data rather than a restart.
+# Self-heal is on because the checked-in copy diffs byte-identical against live
+# — worth re-verifying if this file ever changes, since most of a StatefulSet
+# spec is immutable and a mismatch makes self-heal retry a failing patch
+# forever. Prune stays off: this is the one workload where being wrong costs
+# data rather than a restart.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -24,5 +25,8 @@ spec:
     namespace: default
 
   syncPolicy:
+    automated:
+      selfHeal: true
+      prune: false
     syncOptions:
       - CreateNamespace=false

@@ -4,7 +4,9 @@
 # the last-applied-configuration annotation, so client-side apply fails with
 # "metadata.annotations: Too long".
 #
-# Auto-sync off until the first diff is verified — this was installed by hand.
+# Self-heal is on: the pinned build diffs byte-identical against live, patch
+# included. Prune stays off — the argo-server Ingress lives in local/ and is
+# applied by hand, so it must never be treated as drift to clean up.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -25,6 +27,9 @@ spec:
     namespace: argo
 
   syncPolicy:
+    automated:
+      selfHeal: true
+      prune: false
     syncOptions:
       - ServerSideApply=true
       - CreateNamespace=true
