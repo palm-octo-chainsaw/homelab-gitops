@@ -17,7 +17,7 @@ CERT="${CERT:-}"
 TARGETS=(
     "default:crypto-bot-secret:manifests/crypto-bot/sealed"
     "default:postgres-secret:manifests/postgres/sealed"
-    "mlops:mlops-secrets:manifests/mlops/sealed"
+    "mlops:mlops-secrets:manifests/mlops/base/sealed"
     "mlops:airflow-metadata:manifests/airflow/sealed"
     "mlops:airflow-db:manifests/airflow/sealed"
     "mlops:airflow-fernet-key:manifests/airflow/sealed"
