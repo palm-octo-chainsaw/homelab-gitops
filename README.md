@@ -22,17 +22,21 @@ manifests/              the Kubernetes resources themselves
 |---|---|---|---|
 | `crypto-bot` | `manifests/crypto-bot` | self-heal + prune | Image tag committed by CI |
 | `postgres` | `manifests/postgres` | self-heal | Live data, so prune stays off |
-| `argo-workflows` | `manifests/argo-workflows` | self-heal | Upstream v4.1.2 + overlays |
+| `sealed-secrets` | `manifests/sealed-secrets` | self-heal | Controller mints its own key Secret at runtime, so prune stays off |
+| `airflow` | upstream chart + `manifests/airflow` | no | Chart's migrate and create-user Jobs are sync hooks |
 | `mlops` | `manifests/mlops/base` | no | Self-deleting Job would cause an hourly recreate loop |
 | `argocd` | `manifests/argocd` | no, permanently | Self-management |
 
-`postgres` and `argo-workflows` reproduce live state byte-identically, which is
-why they are trusted to self-heal; neither prunes. `mlops` and `argocd` need the
-fixes described in their `apps/` files before auto-sync is safe.
+`postgres` reproduces live state byte-identically, which is why it is trusted to
+self-heal. Neither it nor `sealed-secrets` prunes, for the different reasons
+above: one would cost data, the other would delete a Secret that was never in
+git. `airflow` and `mlops` both re-run Jobs on every drift check, so auto-sync
+would loop; the fixes are described in their `apps/` files. `argocd` stays
+manual permanently.
 
 ## Bootstrap
 
-Both Argo projects are already installed; this only wires them to the repo.
+ArgoCD is already installed; this only wires it to the repo.
 
 ```bash
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
@@ -69,7 +73,7 @@ annotation — `sealedsecrets.bitnami.com/managed: "true"` — or the controller
 refuses to overwrite it and the SealedSecret sits at `Synced=False`. It fails
 safely, leaving the live Secret untouched. `scripts/seal-secrets.sh` sets it.
 
-**Ingresses.** `local/ingresses.yaml` holds the Argo, MLflow and API Ingresses.
+**Ingresses.** `local/ingresses.yaml` holds the Airflow, MLflow and API Ingresses.
 Their hostnames are nip.io names that encode the node's LAN and Tailscale
 addresses, which cannot go in a public repo — and nip.io has no form that omits
 the IP. Applied by hand, and gitignored.
