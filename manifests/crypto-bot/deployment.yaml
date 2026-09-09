@@ -1,7 +1,6 @@
-# The bot is outbound-only (Telegram long-poll + exchange APIs), so no Service.
-# Exactly one instance may poll the Telegram token at a time, hence replicas: 1
-# and Recreate — a RollingUpdate would briefly run two pods and cause getUpdates
-# 409 conflicts.
+# Outbound-only (Telegram long-poll + exchange APIs), so no Service. Exactly one
+# instance may poll the token, hence replicas: 1 and Recreate — a RollingUpdate
+# would briefly run two pods and cause getUpdates 409 conflicts.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,11 +20,11 @@ spec:
       labels:
         app: crypto-bot
     spec:
-      # Without this the bot sits at the cluster-wide default of 0 and kubelet
-      # evicts it ahead of the batch workloads that fill the disk.
+      # Otherwise it sits at the default 0 and kubelet evicts it ahead of the
+      # batch workloads that fill the disk.
       priorityClassName: crypto-bot-critical
-      # Seeds a fallback targets.json so an empty volume can't crash-loop the
-      # bot (load_json has no missing-file fallback). Only fires if absent.
+      # Seeds targets.json so an empty volume can't crash-loop the bot
+      # (load_json has no missing-file fallback).
       initContainers:
         - name: seed-config
           image: busybox:1.36
@@ -36,8 +35,8 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
-      # ndots:5 is the cluster default, so every external name is tried against
-      # all search domains first — four lookups per host, each able to time out.
+      # The default ndots:5 tries every search domain first — four lookups per
+      # external host, each able to time out.
       dnsConfig:
         options:
           - name: ndots
@@ -48,18 +47,17 @@ spec:
             value: "2"
       containers:
         - name: bot
-          # THIS LINE IS THE DEPLOY. crypto-bot's release workflow commits the
-          # new tag here and ArgoCD rolls it out. Reverting it is a rollback.
+          # THIS LINE IS THE DEPLOY — the release workflow commits the tag here
+          # and ArgoCD rolls it out. Reverting it is a rollback.
           image: a77878123/crypto-bot:v1.10.0.1
-          # Release tags are immutable, so re-pulling every restart bought
-          # nothing. IfNotPresent reuses the cached 600 MB chromium layer.
+          # Tags are immutable, so IfNotPresent reuses the cached 600 MB
+          # chromium layer instead of re-pulling on every restart.
           imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:
                 name: crypto-bot-secret
-          # A single asyncio loop: if it wedges the process stays up and the
-          # container still reports Running, so nothing restarts it. The
-          # heartbeat stops being stamped and this probe notices.
+          # One asyncio loop: if it wedges the process stays Running and nothing
+          # restarts it. The heartbeat stops, and this probe notices.
           livenessProbe:
             exec:
               command:
@@ -81,8 +79,8 @@ spec:
             requests:
               cpu: 100m
               memory: 512Mi
-              # An absent request counts as zero when kubelet ranks eviction
-              # victims, which is why a pod writing 2.4 MB was a candidate.
+              # Absent counts as zero when kubelet ranks eviction victims — which
+              # is how a pod writing 2.4 MB became one.
               ephemeral-storage: 1Gi
             limits:
               memory: 2Gi  # headroom for the Playwright/Chromium scrape

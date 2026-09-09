@@ -1,10 +1,9 @@
-# One-shot: give Airflow its own role and database inside the Postgres the rest
-# of the cluster already uses. Guarded so a rerun is harmless, and it never
-# touches the mlops or cryptobot databases.
+# One-shot: Airflow's own role and database inside the shared Postgres. Guarded
+# so a rerun is harmless; never touches the mlops or cryptobot databases.
 #
-# Reuses the postgres-admin secret created for the mlops bootstrap. Delete that
-# secret once both bootstraps have run — it is the only object outside the
-# default namespace holding the superuser password.
+# Reuses the postgres-admin secret from the mlops bootstrap — the only object
+# outside the default namespace holding the superuser password. Delete it once
+# both bootstraps have run.
 apiVersion: batch/v1
 kind: Job
 metadata:

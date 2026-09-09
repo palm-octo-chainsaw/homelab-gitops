@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
-# Install the kubeseal CLI, matching the controller version exactly.
-#
-# Version skew is tolerated in practice but not worth risking: kubeseal and the
-# controller agree on the SealedSecret API version, and a mismatch shows up as a
-# resource the controller ignores rather than an error.
+# Install the kubeseal CLI, matching the controller version exactly. Skew is
+# tolerated in practice, but a mismatch on the SealedSecret API version shows up
+# as a resource the controller silently ignores rather than an error.
 set -euo pipefail
 
 VERSION="${VERSION:-0.39.1}"

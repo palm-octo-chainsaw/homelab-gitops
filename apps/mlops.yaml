@@ -1,13 +1,9 @@
 # MinIO, MLflow, the inference API, and the one-shot bootstrap/migration Jobs.
 #
-# Auto-sync deliberately off. A first sync is safe — it adds a part-of label to
-# 13 resources — but the minio-bucket Job sets ttlSecondsAfterFinished, so it
-# deletes itself an hour after each run and the app then reports OutOfSync
-# forever. With auto-sync that becomes an hourly recreate loop.
-#
-# Fix before turning this on: make the three Jobs Sync hooks
-# (argocd.argoproj.io/hook: Sync, hook-delete-policy: BeforeHookCreation) so
-# ArgoCD stops tracking them as drift.
+# Auto-sync off: the minio-bucket Job sets ttlSecondsAfterFinished and deletes
+# itself an hour after each run, so the app reports OutOfSync forever and
+# auto-sync becomes an hourly recreate loop. Fix before enabling — make the three
+# Jobs Sync hooks (hook: Sync, hook-delete-policy: BeforeHookCreation).
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -21,8 +17,7 @@ spec:
   source:
     repoURL: https://github.com/palm-octo-chainsaw/homelab-gitops.git
     targetRevision: master
-    # base/ only — jobs/backfill.yaml is run ad hoc and would be recreated on
-    # every sync if managed here.
+    # base/ only — jobs/backfill.yaml is ad hoc, recreated on every sync if managed.
     path: manifests/mlops/base
 
   destination:

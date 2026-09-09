@@ -13,10 +13,9 @@ spec:
 
   sourceRepos:
     - https://github.com/palm-octo-chainsaw/homelab-gitops.git
-    # The Airflow chart is rendered from upstream rather than vendored, so the
-    # chart repo has to be listed. Named explicitly, not a wildcard: this list is
-    # the only thing stopping an Application in this project from pulling
-    # manifests out of an arbitrary repo.
+    # The Airflow chart renders from upstream, so its repo has to be listed.
+    # Explicit, not a wildcard — this list is the only thing stopping an
+    # Application here from pulling manifests out of an arbitrary repo.
     - https://airflow.apache.org
 
   destinations:

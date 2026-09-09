@@ -1,6 +1,6 @@
-# MinIO is the one component that grows without bound, so it is pinned to /home
-# (185Gi free) with an explicit local PV instead of the default local-path class,
-# which provisions onto / where only ~14Gi remains.
+# The one component that grows without bound, so it is pinned to /home (185Gi
+# free) with an explicit local PV — local-path would provision onto /, where
+# only ~14Gi remains.
 #
 # Create the directory on the node first:
 #   sudo mkdir -p /home/mlops/minio && sudo chown 1000:1000 /home/mlops/minio

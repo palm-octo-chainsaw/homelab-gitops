@@ -2,17 +2,13 @@
 # Create Airflow's six secrets as SealedSecrets, without a plaintext Secret ever
 # existing anywhere.
 #
-# Values are generated here, piped straight into kubeseal, and only the ciphertext
-# is written to disk or sent to the cluster. `kubectl create --dry-run=client`
-# builds the Secret object locally and never contacts the API server, so there is
-# no window in which these exist unencrypted in etcd, in a file, or in a shell
-# history.
+# Values are generated here and piped straight into kubeseal; only ciphertext is
+# written or applied. `kubectl create --dry-run=client` builds the object locally
+# and never contacts the API server, so these never exist unencrypted in etcd, in
+# a file, or in shell history. The older secrets predate the controller and are
+# converted by seal-secrets.sh instead.
 #
-# This is what every secret in this repo should look like eventually. The other
-# nine predate the controller and are converted by seal-secrets.sh instead.
-#
-# Run on the server, from the repo root, after the sealed-secrets controller is
-# up and its key backed up.
+# Run on the server, from the repo root, once the controller is up.
 set -euo pipefail
 
 K="${K:-sudo -n k3s kubectl}"
@@ -35,7 +31,7 @@ fi
 
 mkdir -p "$OUT_DIR"
 
-# Alphanumeric only: this password is embedded in a URL, where '/' and '+' would
+# Alphanumeric only — this password is embedded in a URL, where '/' and '+' would
 # need percent-encoding in one place and not the other.
 gen() { head -c 48 /dev/urandom | base64 | tr -d '/+=' | head -c 32; }
 
@@ -44,9 +40,9 @@ JWT_SECRET="$(head -c 96 /dev/urandom | base64 | tr -d '/+=' | head -c 64)"
 API_SECRET="$(gen)"
 WEBSERVER_SECRET="$(gen)"
 
-# A Fernet key is a specific format — 32 url-safe base64 bytes — not free text.
-# Generated with the library Airflow validates it with, borrowing the airflow
-# image if the host python lacks cryptography.
+# A Fernet key is a fixed format (32 url-safe base64 bytes), so it is generated
+# with the library Airflow validates it with — borrowing the airflow image if the
+# host python lacks cryptography.
 FERNET_KEY="$(python3 -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())' 2>/dev/null || true)"
 if [ -z "$FERNET_KEY" ]; then
     FERNET_KEY="$($K -n "$NS" run fernet-gen --rm -i --restart=Never --quiet \

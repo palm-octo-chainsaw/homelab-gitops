@@ -27,10 +27,9 @@ spec:
             - configMapRef: { name: mlops-env }
             - secretRef: { name: mlops-secrets }
           env:
-            # The MLflow client defaults to seven retries with exponential backoff.
-            # When the tracking server is down that turns "start degraded" into a
-            # two-minute hang, which the liveness probe reads as a hung pod and
-            # kills — a crashloop caused entirely by waiting politely.
+            # The client's default seven retries with backoff turn "start
+            # degraded" into a two-minute hang when the tracking server is down,
+            # which liveness kills — a crashloop caused by waiting politely.
             - name: MLFLOW_HTTP_REQUEST_MAX_RETRIES
               value: "2"
             - name: MLFLOW_HTTP_REQUEST_TIMEOUT
@@ -41,10 +40,9 @@ spec:
             - name: pipeline-config
               mountPath: /app/config
               readOnly: true
-          # /health answers 200 with status "degraded" before the first model is
-          # registered, which is deliberate: the pod must stay up so the daily
-          # workflow has something to call /reload on.
-          # The startup probe owns the slow path, so liveness only judges a pod
+          # /health answers 200 "degraded" before the first model is registered,
+          # deliberately: the pod must stay up for the daily workflow to call
+          # /reload on. Startup owns the slow path; liveness only judges a pod
           # that has already served once.
           startupProbe:
             httpGet: { path: /health, port: http }

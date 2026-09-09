@@ -1,9 +1,8 @@
 # Values for the official Airflow chart 1.22.0 (Airflow 3.2.2), rendered by
-# ArgoCD — there is no helm binary on the node and none is needed.
+# ArgoCD — no helm binary on the node and none needed.
 #
-# Shape of this deployment: KubernetesExecutor against the Postgres the cluster
-# already runs, a custom image carrying the DAGs and the mlops_crypto package,
-# and every optional component that exists to support CeleryExecutor turned off.
+# KubernetesExecutor against the Postgres the cluster already runs, a custom image
+# carrying the DAGs and the mlops_crypto package, CeleryExecutor extras all off.
 
 airflowVersion: "3.2.2"
 executor: KubernetesExecutor
@@ -13,13 +12,10 @@ images:
     repository: mlops-crypto/airflow
     tag: dev
     pullPolicy: Never
-  # The migration Job must run the same image as everything else; the upstream
-  # default would migrate the database with a stock Airflow that lacks the DAGs'
-  # dependencies.
+  # The migration Job needs this image; stock Airflow lacks the DAGs' deps.
   useDefaultImageForMigration: false
 
-# Everything below exists for CeleryExecutor or for observability we get
-# elsewhere. Off means roughly 1.5GB of RAM not spent on a 15GB node.
+# CeleryExecutor extras and duplicate observability — ~1.5GB of RAM on a 15GB node.
 postgresql:
   enabled: false
 redis:
@@ -31,13 +27,12 @@ statsd:
 pgbouncer:
   enabled: false
 triggerer:
-  # Deferrable operators only. Neither DAG uses one; turn this on the day one does.
+  # Deferrable operators only. Neither DAG uses one.
   enabled: false
 
-# Pre-created, never chart-generated: the chart falls back to randAlphaNum, which
-# would mint a new value on every ArgoCD sync and roll every pod with it. Losing
-# the fernet key invalidates stored connections; losing the JWT secret breaks
-# running tasks' calls back to the API server.
+# Pre-created, never chart-generated: the chart's randAlphaNum fallback would mint
+# a new value on every sync and roll every pod. Losing the fernet key invalidates
+# stored connections; losing the JWT secret breaks running tasks.
 data:
   metadataSecretName: airflow-metadata
 fernetKeySecretName: airflow-fernet-key
@@ -46,34 +41,30 @@ apiSecretKeySecretName: airflow-api-secret
 webserverSecretKeySecretName: airflow-webserver
 
 dags:
-  # Baked into the image rather than pulled by git-sync: this cluster has no
-  # registry and images are side-loaded, so DAGs and the code they import ship
-  # as one artifact and cannot disagree about a function signature.
+  # Baked into the image, not git-synced: no registry here, so DAGs and the code
+  # they import ship as one artifact and cannot disagree on a signature.
   gitSync:
     enabled: false
   persistence:
     enabled: false
 
 logs:
-  # Under KubernetesExecutor a task's log lives in a pod that is deleted when it
-  # finishes. Without this the UI shows nothing for any completed task.
+  # Task logs live in pods that KubernetesExecutor deletes; without this the UI
+  # shows nothing for a completed task.
   persistence:
     enabled: true
-    # The claim is ours, not the chart's: the chart hardcodes ReadWriteMany and
-    # local-path cannot provide it. See manifests/airflow/logs-pvc.yaml.
+    # Ours, not the chart's — see manifests/airflow/logs-pvc.yaml.
     existingClaim: airflow-logs
 
-# Injects the pipeline's own configuration — database DSNs, MLflow address, MinIO
-# credentials — into the scheduler and into every task pod.
+# Pipeline config — DSNs, MLflow address, MinIO creds — into scheduler and tasks.
 extraEnvFrom: |
   - configMapRef:
       name: mlops-env
   - secretRef:
       name: mlops-secrets
 
-# env wins over envFrom on a name collision, which is what corrects CONFIG_DIR:
-# mlops-env points at /app/config, the path inside the pipelines image, but in
-# this image the config is baked at a different location.
+# env wins over envFrom on collision, correcting CONFIG_DIR: mlops-env points at
+# /app/config, but this image bakes the config elsewhere.
 extraEnv: |
   - name: CONFIG_DIR
     value: /opt/airflow/pipeline-config
@@ -115,14 +106,13 @@ dagProcessor:
     requests: { cpu: 100m, memory: 512Mi }
     limits: { memory: 1Gi }
 
-# The template every KubernetesExecutor task pod is built from. Training is the
-# outlier at 3Gi; it gets its own override in the DAG.
+# Template for every task pod. Training is the outlier at 3Gi, overridden in the DAG.
 workers:
   resources:
     requests: { cpu: 200m, memory: 768Mi }
     limits: { memory: 3Gi }
 
-# The chart's own ingress stays off — manifests/airflow/ingress.yaml carries the
-# LAN and Tailscale hosts, matching every other workload here.
+# Off — the LAN and Tailscale hosts are carried outside the repo, like every
+# other workload here.
 ingress:
   enabled: false

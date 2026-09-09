@@ -1,19 +1,16 @@
 # ArgoCD managing itself (v3.5.1).
 #
-# Auto-sync is off and should stay off: a bad sync here removes the thing that
-# would fix it — pruning or restarting repo-server/application-controller
-# mid-sync leaves nothing running to reconcile. Recovery is a manual apply of
-# the upstream install.yaml.
-#
-# Still worth checking in: it records the installed version and makes upgrades a
-# reviewed diff. ServerSideApply for the same CRD size reason as Argo Workflows.
+# Auto-sync off permanently — a bad sync removes the thing that would fix it, and
+# recovery is a manual apply of upstream install.yaml. Checked in anyway to record
+# the version and make upgrades a reviewed diff. ServerSideApply because the
+# upstream CRDs exceed the 262144-byte last-applied-configuration annotation that
+# a client-side apply would write.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: argocd
   namespace: argocd
-  # No resources-finalizer on purpose — it would make deleting this Application
-  # uninstall ArgoCD, including the controller doing the deleting.
+  # No resources-finalizer: deleting this Application would uninstall ArgoCD.
 spec:
   project: homelab
 

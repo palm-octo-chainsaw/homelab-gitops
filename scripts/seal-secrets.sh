@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
-# Convert the cluster's existing hand-made Secrets into committable SealedSecrets.
+# Convert the cluster's hand-made Secrets into committable SealedSecrets.
 #
-# Reads each live Secret, strips the server-side fields, seals it against the
-# controller's public certificate, and writes the result next to the workload it
-# belongs to. Plaintext never touches disk — the pipeline goes straight from
-# kubectl into kubeseal.
+# Reads each live Secret, strips server-side fields, seals it against the
+# controller's certificate, and writes it next to its workload. Plaintext never
+# touches disk — kubectl pipes straight into kubeseal.
 #
-# Safe to rerun: sealing is deterministic per key, and re-sealing an unchanged
-# secret produces an equivalent file. Nothing is deleted from the cluster; the
-# live Secrets keep working until you decide to hand them over.
-#
+# Safe to rerun, and nothing is deleted; the live Secrets keep working.
 # Run on the server, from the repo root.
 set -euo pipefail
 
@@ -30,9 +26,8 @@ TARGETS=(
     "mlops:airflow-webserver:manifests/airflow/sealed"
 )
 
-# postgres-admin is deliberately absent. It holds the Postgres superuser password
-# for the one-shot bootstrap Jobs and should be deleted once they have run, not
-# committed in any form.
+# postgres-admin is deliberately absent — it holds the Postgres superuser password
+# for the bootstrap Jobs and should be deleted once they have run.
 
 fetch_cert() {
     if [ -n "$CERT" ]; then
@@ -58,12 +53,9 @@ for target in "${TARGETS[@]}"; do
     mkdir -p "$REPO_ROOT/$dir"
     out="$REPO_ROOT/$dir/${name}.sealed.yaml"
 
-    # creationTimestamp, resourceVersion, uid and the last-applied annotation are
-    # server-side noise; leaving them in makes every re-seal a spurious diff.
-    #
-    # JSON, not YAML: the host python has no PyYAML, and kubeseal accepts either.
-    # metadata.name and metadata.namespace must survive — strict scope binds the
-    # ciphertext to both, and dropping either makes the result undecryptable.
+    # Strips server-side noise, which would otherwise make every re-seal a
+    # spurious diff. JSON because the host python has no PyYAML. name and
+    # namespace must survive — strict scope binds the ciphertext to both.
     $K get secret "$name" -n "$ns" -o json \
         | python3 -c '
 import json, sys
@@ -75,11 +67,9 @@ json.dump(d, sys.stdout)
 ' \
         | kubeseal --format yaml --cert "$CERT_FILE" --scope strict > "$out"
 
-    # The controller refuses to touch a Secret it did not create:
-    #   "Resource X already exists and is not managed by SealedSecret"
-    # It fails safely — the live Secret is left alone — but the SealedSecret sits
-    # at Synced=False forever. This annotation is the documented opt-in that lets
-    # the controller adopt an existing Secret instead.
+    # The controller refuses to touch a Secret it did not create, failing safely
+    # but sitting at Synced=False forever. This annotation is the documented
+    # opt-in that lets it adopt an existing Secret.
     $K annotate secret "$name" -n "$ns" \
         sealedsecrets.bitnami.com/managed="true" --overwrite >/dev/null
 

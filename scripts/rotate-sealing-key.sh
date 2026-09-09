@@ -1,17 +1,10 @@
 #!/usr/bin/env bash
-# Rotate the sealing key on purpose.
+# Rotate the sealing key on purpose. The controller runs with
+# --key-renew-period=0 because automatic 30-day renewal quietly invalidates an
+# off-box backup with no signal that it has gone stale.
 #
-# The controller runs with --key-renew-period=0, so this never happens on its
-# own. That is deliberate: automatic renewal every 30 days quietly invalidates
-# an off-box key backup, and nothing tells you it has gone stale.
-#
-# What this does: asks the controller to mint a new key, which becomes the one
-# used for sealing. Old keys are retained, so existing SealedSecrets keep
-# decrypting — but anything sealed from now on needs the new key, so the backup
-# must be retaken and the sealed files re-sealed.
-#
-# Run this if the key is believed compromised, or on whatever schedule you decide
-# to keep. Not required for normal operation.
+# Mints a new key for sealing. Old keys are retained so existing SealedSecrets
+# still decrypt, but the backup must be retaken and the files re-sealed.
 set -euo pipefail
 
 K="${K:-sudo -n k3s kubectl}"
@@ -23,8 +16,7 @@ $K -n kube-system get secret -l sealedsecrets.bitnami.com/sealed-secrets-key \
 read -r -p "mint a new sealing key? [y/N] " reply
 [ "$reply" = "y" ] || { echo "aborted"; exit 0; }
 
-# The controller mints a key on startup when told to; the documented trigger is
-# a SIGUSR1 to the running process.
+# The documented trigger is a SIGUSR1 to the running process.
 pod=$($K -n kube-system get pod -l name=sealed-secrets-controller -o name | head -1)
 $K -n kube-system exec "$pod" -- sh -c 'kill -USR1 1'
 

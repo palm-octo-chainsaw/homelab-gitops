@@ -33,11 +33,10 @@ spec:
           command: ["bash", "-euo", "pipefail", "-c"]
           args:
             - |
-              # Roles are created from the shell rather than a DO block: psql does
-              # not substitute :variables inside dollar-quoted text, and the kubelet
-              # rewrites a bare $$ to a single $ before psql ever sees it. Existing
-              # roles get ALTER so the password always matches what is in the
-              # secret, which makes a secret rotation a rerun of this Job.
+              # From the shell, not a DO block: psql does not substitute
+              # :variables inside dollar-quoted text, and the kubelet rewrites a
+              # bare $$ to a single $ first. Existing roles get ALTER, so a secret
+              # rotation is just a rerun of this Job.
               create_role() {
                 if psql -tAc "SELECT 1 FROM pg_roles WHERE rolname = '$1'" | grep -q 1; then
                   psql -v ON_ERROR_STOP=1 -c "ALTER ROLE $1 WITH LOGIN PASSWORD '$2'"
@@ -50,8 +49,8 @@ spec:
               create_role mlops "$MLOPS_PASSWORD"
               create_role mlops_reader "$READER_PASSWORD"
 
-              # CREATE DATABASE cannot run inside a transaction block, hence the
-              # separate invocations and the grep-guard instead of IF NOT EXISTS.
+              # CREATE DATABASE cannot run in a transaction block, hence separate
+              # invocations and a grep-guard instead of IF NOT EXISTS.
               for db in mlops mlflow; do
                 if ! psql -tAc "SELECT 1 FROM pg_database WHERE datname = '$db'" | grep -q 1; then
                   psql -v ON_ERROR_STOP=1 -c "CREATE DATABASE $db OWNER mlops"

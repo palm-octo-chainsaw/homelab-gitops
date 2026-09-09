@@ -1,8 +1,8 @@
-# One-off history seed. Not part of the kustomize base — it is run by hand when a
-# new symbol is added or a fresh database is stood up, and deleted afterwards.
+# One-off history seed. Not part of the kustomize base — run by hand when a symbol
+# is added or a fresh database is stood up, and deleted afterwards.
 #
 #   kubectl -n mlops delete job backfill --ignore-not-found
-#   kubectl apply -f k8s/jobs/backfill.yaml
+#   kubectl apply -f manifests/mlops/jobs/backfill.yaml
 #   kubectl -n mlops logs -f job/backfill
 apiVersion: batch/v1
 kind: Job

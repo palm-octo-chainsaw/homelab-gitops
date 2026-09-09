@@ -22,16 +22,12 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
-              # Each worker loads the whole app and settles around 900MB, so the
-              # stock four OOM inside any sane limit. One is enough for a tracking
-              # server whose only clients are a pipeline pod and a browser tab.
+              # Each worker loads the whole app at ~900MB, so the stock four OOM
+              # inside any sane limit; one serves a pipeline pod and a browser tab.
               #
-              # MLflow 3 rejects any request whose Host header it does not
-              # recognise, as DNS-rebinding protection. In a cluster every client
-              # arrives as a service name or an ingress host, none of which it
-              # knows, so each one answers 403 until listed here. The probes use
-              # localhost; the pipeline pods use the service name; browsers arrive
-              # through the ingress hosts.
+              # MLflow 3 answers 403 to any Host header it does not recognise
+              # (DNS-rebinding protection), and in a cluster every client arrives
+              # as a service name or ingress host — so each must be listed.
               exec mlflow server \
                 --host 0.0.0.0 --port 5000 \
                 --workers 1 \

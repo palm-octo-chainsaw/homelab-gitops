@@ -1,7 +1,6 @@
 # Nightly recycle of the bot's long-lived Playwright session and Telegram poll.
-#
-# 00:00 Europe/Sofia is deliberate: the daily RSPS signal posts ~00:12 UTC and
-# the poller's first run is one full interval after boot, so restarting near the
+# 00:00 Europe/Sofia is deliberate: the daily RSPS signal posts ~00:12 UTC and the
+# poller's first run is one full interval after boot, so restarting nearer the
 # signal would delay picking it up.
 apiVersion: v1
 kind: ServiceAccount

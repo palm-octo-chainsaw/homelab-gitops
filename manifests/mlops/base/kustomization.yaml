@@ -3,9 +3,9 @@ kind: Kustomization
 
 namespace: mlops
 
-# mlops-secrets now lives in sealed/ as ciphertext. postgres-admin is still
-# absent on purpose: it holds the Postgres superuser password for the one-shot
-# bootstrap Jobs and should be deleted once they have run, not committed.
+# mlops-secrets lives in sealed/ as ciphertext. postgres-admin stays absent: it
+# holds the superuser password for the bootstrap Jobs and should be deleted once
+# they have run, not committed.
 resources:
   - namespace.yaml
   - sealed/mlops-secrets.sealed.yaml
@@ -16,10 +16,9 @@ resources:
   - api.yaml
   - migrate-job.yaml
 
-# `labels` rather than the deprecated `commonLabels`, which also writes into
-# spec.selector — immutable on Deployments that already exist. These workloads
-# were applied from the raw files and carry no part-of label, so commonLabels
-# made every sync fail on the selector.
+# `labels`, not the deprecated `commonLabels`: that also writes spec.selector,
+# which is immutable, and these workloads were applied from raw files with no
+# part-of label — so commonLabels made every sync fail on the selector.
 labels:
   - pairs:
       app.kubernetes.io/part-of: mlops-crypto

@@ -1,18 +1,13 @@
 # Airflow 3.2.2 via the official chart, orchestrating the mlops-crypto pipeline.
-# Replaces the Argo Workflows CronWorkflows that drove it previously.
 #
 # Three sources: the upstream chart, this repo as a values reference, and this
-# repo again for the resources the chart does not cover (the database bootstrap
-# Job and the ingress).
+# repo again for what the chart does not cover.
 #
-# Auto-sync deliberately off, for the same reason as the mlops app: the chart's
-# migrate and create-user Jobs are ArgoCD sync hooks, and a self-healing app
-# would re-run them on every drift check.
+# Auto-sync off: the chart's migrate and create-user Jobs are sync hooks, so a
+# self-healing app would re-run them on every drift check.
 #
-# Requires, created by hand before the first sync (see
-# manifests/airflow/secrets.example.yaml):
-#   airflow-metadata, airflow-fernet-key, airflow-jwt, airflow-api-secret,
-#   airflow-webserver, airflow-db
+# Its six Secrets must exist before the first sync — see
+# manifests/airflow/secrets.example.yaml.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -47,6 +42,5 @@ spec:
   syncPolicy:
     syncOptions:
       - CreateNamespace=false
-      # The chart ships a large CRD-free but annotation-heavy set of objects and
-      # patches them in place across upgrades.
+      # Annotation-heavy objects, patched in place across upgrades.
       - ServerSideApply=true
