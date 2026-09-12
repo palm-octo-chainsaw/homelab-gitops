@@ -1,0 +1,291 @@
+affinity: {}
+apiServer:
+  corsOrigins: ''
+  enabled: false
+  host: 0.0.0.0
+  modelName: hermes-agent
+  port: 8642
+args:
+- gateway
+- run
+bootstrap:
+  configKey: config.yaml
+  enabled: true
+  existingConfigMap: ''
+  overwrite: true
+  soulKey: SOUL.md
+browser:
+  shm:
+    enabled: true
+    mountPath: /dev/shm
+    sizeLimit: 1Gi
+command: []
+config:
+  raw: ''
+  values:
+    agent:
+      gateway_timeout: 1800
+      max_turns: 90
+      restart_drain_timeout: 60
+      tool_use_enforcement: auto
+    browser:
+      allow_private_urls: false
+      command_timeout: 30
+      inactivity_timeout: 120
+    compression:
+      enabled: true
+      protect_last_n: 20
+      target_ratio: 0.2
+      threshold: 0.5
+    display:
+      interim_assistant_messages: true
+      tool_progress: all
+    model:
+      base_url: https://openrouter.ai/api/v1
+      default: anthropic/claude-opus-4.6
+      provider: auto
+    security:
+      redact_secrets: true
+      tirith_enabled: true
+      tirith_fail_open: true
+    terminal:
+      backend: local
+      cwd: .
+      timeout: 180
+deploymentAnnotations: {}
+env:
+  DISCORD_ALLOWED_USERS: ''
+  DISCORD_HOME_CHANNEL: ''
+  GATEWAY_ALLOW_ALL_USERS: 'false'
+  HERMES_HUMAN_DELAY_MAX_MS: '2500'
+  HERMES_HUMAN_DELAY_MIN_MS: '800'
+  HERMES_HUMAN_DELAY_MODE: 'off'
+  IMAGE_TOOLS_DEBUG: 'false'
+  MOA_TOOLS_DEBUG: 'false'
+  SIGNAL_ALLOWED_USERS: ''
+  SIGNAL_GROUP_ALLOWED_USERS: ''
+  SLACK_ALLOWED_USERS: ''
+  TELEGRAM_ALLOWED_USERS: ''
+  TELEGRAM_HOME_CHANNEL: ''
+  VISION_TOOLS_DEBUG: 'false'
+  WEB_TOOLS_DEBUG: 'false'
+  WHATSAPP_ALLOWED_USERS: ''
+  WHATSAPP_ENABLED: 'false'
+externalSecret:
+  annotations: {}
+  data: []
+  dataFrom: []
+  enabled: false
+  labels: {}
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: ''
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Retain
+    name: ''
+    template:
+      metadata:
+        annotations: {}
+        labels: {}
+      type: Opaque
+extraContainers: []
+extraEnv: []
+extraEnvFrom: []
+extraInitContainers: []
+extraObjects: []
+extraVolumeMounts: []
+extraVolumes: []
+fullnameOverride: ''
+image:
+  pullPolicy: IfNotPresent
+  repository: nousresearch/hermes-agent
+  tag: 0.8.0
+imagePullSecrets: []
+ingress:
+  annotations: {}
+  className: ''
+  enabled: false
+  hosts:
+  - host: hermes.local
+    paths:
+    - path: /
+      pathType: Prefix
+  servicePortNumber: null
+  tls: []
+nameOverride: ''
+networkPolicy:
+  egress: []
+  enabled: false
+  ingress: []
+  policyTypes:
+  - Ingress
+  - Egress
+nodeSelector: {}
+npmPackages: []
+operator:
+  controllerClass: hermes.ai/default
+  defaultChartValues: {}
+  enabled: false
+  installCustomResources: true
+  managementNamespace: ''
+  tenants: []
+pdb:
+  enabled: false
+  minAvailable: 1
+persistence:
+  accessMode: ReadWriteOnce
+  annotations: {}
+  enabled: true
+  existingClaim: ''
+  mountPath: /opt/data
+  size: 5Gi
+  storageClass: ''
+podAnnotations: {}
+podLabels: {}
+podSecurityContext:
+  fsGroup: 1000
+  fsGroupChangePolicy: OnRootMismatch
+  runAsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+  seccompProfile:
+    type: RuntimeDefault
+priorityClassName: ''
+probes:
+  liveness: {}
+  readiness: {}
+  startup: {}
+rbac:
+  annotations: {}
+  clusterWide: false
+  create: false
+  rules: []
+replicaCount: 1
+resources:
+  limits:
+    cpu: '2'
+    memory: 4Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+revisionHistoryLimit: 5
+runtimeClassName: ''
+secrets:
+  AI_GATEWAY_API_KEY: ''
+  ANTHROPIC_API_KEY: ''
+  API_SERVER_KEY: ''
+  BLUEBUBBLES_PASSWORD: ''
+  BLUEBUBBLES_SERVER_URL: ''
+  BROWSERBASE_API_KEY: ''
+  BROWSERBASE_PROJECT_ID: ''
+  DINGTALK_CLIENT_ID: ''
+  DINGTALK_CLIENT_SECRET: ''
+  DISCORD_BOT_TOKEN: ''
+  EMAIL_ADDRESS: ''
+  EMAIL_IMAP_HOST: ''
+  EMAIL_IMAP_PORT: ''
+  EMAIL_PASSWORD: ''
+  EMAIL_SMTP_HOST: ''
+  EMAIL_SMTP_PORT: ''
+  EXA_API_KEY: ''
+  FAL_KEY: ''
+  FEISHU_APP_ID: ''
+  FEISHU_APP_SECRET: ''
+  FEISHU_ENCRYPT_KEY: ''
+  FEISHU_VERIFICATION_TOKEN: ''
+  FIRECRAWL_API_KEY: ''
+  GEMINI_API_KEY: ''
+  GITHUB_TOKEN: ''
+  GLM_API_KEY: ''
+  GOOGLE_API_KEY: ''
+  GROQ_API_KEY: ''
+  HF_TOKEN: ''
+  HONCHO_API_KEY: ''
+  KIMI_API_KEY: ''
+  MINIMAX_API_KEY: ''
+  MINIMAX_CN_API_KEY: ''
+  MISTRAL_API_KEY: ''
+  NOUS_API_KEY: ''
+  OPENAI_API_KEY: ''
+  OPENROUTER_API_KEY: ''
+  SIGNAL_ACCOUNT: ''
+  SIGNAL_HTTP_URL: ''
+  SLACK_APP_TOKEN: ''
+  SLACK_BOT_TOKEN: ''
+  SUDO_PASSWORD: ''
+  TELEGRAM_BOT_TOKEN: ''
+  TINKER_API_KEY: ''
+  VOICE_TOOLS_OPENAI_KEY: ''
+  WANDB_API_KEY: ''
+  WEBHOOK_SECRET: ''
+  WECOM_BOT_ID: ''
+  WECOM_CALLBACK_AGENT_ID: ''
+  WECOM_CALLBACK_CORP_ID: ''
+  WECOM_CALLBACK_CORP_SECRET: ''
+  WECOM_CALLBACK_ENCODING_AES_KEY: ''
+  WECOM_CALLBACK_TOKEN: ''
+  WECOM_SECRET: ''
+  WEIXIN_ACCOUNT_ID: ''
+  WEIXIN_TOKEN: ''
+  XIAOMI_API_KEY: ''
+  annotations: {}
+  existingSecret: ''
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  seccompProfile:
+    type: RuntimeDefault
+service:
+  annotations: {}
+  enabled: false
+  externalTrafficPolicy: ''
+  internalTrafficPolicy: ''
+  labels: {}
+  loadBalancerSourceRanges: []
+  ports: []
+  sessionAffinity: None
+  type: ClusterIP
+serviceAccount:
+  annotations: {}
+  automountServiceAccountToken: false
+  create: true
+  name: ''
+soul:
+  text: ''
+strategy:
+  type: Recreate
+telegramWebhook:
+  enabled: false
+  port: 8443
+  url: ''
+tenant:
+  id: ''
+  labels: {}
+tenantIsolation:
+  additionalEgress: []
+  allowDns: true
+  allowSameNamespace: true
+  authorizedNamespaces: []
+  enabled: false
+  podAntiAffinity:
+    enabled: false
+    topologyKey: kubernetes.io/hostname
+    type: preferredDuringSchedulingIgnoredDuringExecution
+terminationGracePeriodSeconds: 120
+tolerations: []
+topologySpreadConstraints: []
+virtualService:
+  enabled: false
+  gateways: []
+  hosts: []
+  servicePortNumber: null
+  timeout: 3600s
+webhook:
+  enabled: false
+  port: 8644
+workingDir: /opt/hermes

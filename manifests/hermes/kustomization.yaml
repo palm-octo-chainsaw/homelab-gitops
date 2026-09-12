@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: hermes
+
+# chart/ and values.yaml are consumed by the Application's Helm sources, not
+# applied here.
+resources:
+  - sealed/hermes-secrets.sealed.yaml

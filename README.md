@@ -25,6 +25,7 @@ manifests/              the Kubernetes resources themselves
 | `sealed-secrets` | `manifests/sealed-secrets` | self-heal | Controller mints its own key Secret at runtime, so prune stays off |
 | `airflow` | upstream chart + `manifests/airflow` | no | Chart's migrate and create-user Jobs are sync hooks |
 | `mlops` | `manifests/mlops/base` | no | Self-deleting Job would cause an hourly recreate loop |
+| `hermes` | vendored chart + `manifests/hermes` | no | Adopting a live helm CLI release |
 | `argocd` | `manifests/argocd` | no, permanently | Self-management |
 
 `postgres` reproduces live state byte-identically, which is why it is trusted to
@@ -33,6 +34,12 @@ above: one would cost data, the other would delete a Secret that was never in
 git. `airflow` and `mlops` both re-run Jobs on every drift check, so auto-sync
 would loop; the fixes are described in their `apps/` files. `argocd` stays
 manual permanently.
+
+`hermes` is the one workload whose chart is vendored rather than pulled: it is
+published nowhere reachable, and `manifests/hermes/chart` was recovered from the
+release Secret of the original `helm install`. It still has a helm CLI release
+behind it, so its first sync is an adoption — do it by hand, then treat helm as
+read-only for it.
 
 ## Bootstrap
 

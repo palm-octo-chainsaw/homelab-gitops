@@ -1,0 +1,44 @@
+# Nous Research's Hermes Agent, from a chart vendored at manifests/hermes/chart.
+# The chart is published nowhere this cluster can reach it; the copy in this repo
+# was recovered from the release Secret of the original helm install.
+#
+# Auto-sync off: this adopts a release that helm CLI still has a record of, and
+# the PVC under it holds the agent's whole mutable state. Sync it by hand, check
+# the diff, and stop running helm upgrade against this release afterwards.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hermes
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: homelab
+
+  sources:
+    - repoURL: https://github.com/palm-octo-chainsaw/homelab-gitops.git
+      targetRevision: master
+      path: manifests/hermes/chart
+      helm:
+        releaseName: hermes
+        valueFiles:
+          - $values/manifests/hermes/values.yaml
+
+    - repoURL: https://github.com/palm-octo-chainsaw/homelab-gitops.git
+      targetRevision: master
+      ref: values
+
+    - repoURL: https://github.com/palm-octo-chainsaw/homelab-gitops.git
+      targetRevision: master
+      path: manifests/hermes
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: hermes
+
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true  # nothing in git creates it
+      # The original install used server-side apply; adopting without it fights
+      # helm for field ownership.
+      - ServerSideApply=true

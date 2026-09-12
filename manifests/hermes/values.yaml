@@ -1,0 +1,82 @@
+image:
+  # 0.8.0 is the appVersion, not a published tag.
+  tag: v2026.8.31
+
+config:
+  values:
+    model:
+      default: anthropic/claude-sonnet-5
+
+operator:
+  enabled: false
+
+secrets:
+  existingSecret: hermes-secrets
+
+# s6-overlay aborts under an arbitrary uid; it drops to its own 10000 itself.
+podSecurityContext:
+  runAsUser: 0
+  runAsGroup: 0
+  runAsNonRoot: false
+  fsGroup: 1000
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+    # Needed for the privilege drop itself.
+    add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+      - KILL
+  seccompProfile:
+    type: RuntimeDefault
+
+# Nowhere for s6 to write its supervision state otherwise.
+extraVolumes:
+  - name: run
+    emptyDir: {}
+
+extraVolumeMounts:
+  - name: run
+    mountPath: /run
+
+# The chart's bootstrap init container runs as root, so what it copies onto the
+# PVC lands unreadable by uid 10000.
+extraInitContainers:
+  - name: fix-data-perms
+    image: nousresearch/hermes-agent:v2026.8.31
+    imagePullPolicy: IfNotPresent
+    command:
+      - /bin/sh
+      - -ec
+    args:
+      - |
+        for p in /opt/data /opt/data/home /opt/data/config.yaml /opt/data/SOUL.md; do
+          [ -e "$p" ] && chown 10000:1000 "$p"
+        done
+    securityContext:
+      runAsUser: 0
+      runAsGroup: 0
+      runAsNonRoot: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+        add:
+          - CHOWN
+          - FOWNER
+      seccompProfile:
+        type: RuntimeDefault
+    volumeMounts:
+      - name: data
+        mountPath: /opt/data
