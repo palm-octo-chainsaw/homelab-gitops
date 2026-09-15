@@ -93,4 +93,5 @@ spec:
           persistentVolumeClaim:
             claimName: crypto-bot-trw-session
         - name: logs
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: crypto-bot-logs

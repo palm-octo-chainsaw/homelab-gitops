@@ -23,3 +23,17 @@ spec:
   resources:
     requests:
       storage: 256Mi
+---
+# Logs survive the pod, so the nightly restart no longer destroys the day that
+# just ended — the only copy used to live in an emptyDir. One file per day at
+# roughly 2 MB, so 1Gi holds well over a year.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: crypto-bot-logs
+  namespace: default
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
