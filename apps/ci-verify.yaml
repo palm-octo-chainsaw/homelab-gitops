@@ -1,0 +1,26 @@
+# RBAC for crypto-bot's release verify job. Its resources span default and
+# argocd and each names its own namespace; the destination below is only the
+# fallback for anything that doesn't.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ci-verify
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: homelab
+
+  source:
+    repoURL: https://github.com/palm-octo-chainsaw/homelab-gitops.git
+    targetRevision: master
+    path: manifests/ci-verify
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true

@@ -1,0 +1,77 @@
+# RBAC for crypto-bot's release verify job (.github/workflows/docker-publish.yml).
+# It reaches the cluster over Tailscale as tag:ci and needs to read the
+# rollout it's waiting on and nudge ArgoCD to refresh sooner than its 3-minute
+# poll. Two namespaces, so this can't live in manifests/crypto-bot's
+# kustomization: that one sets `namespace: default` and would silently rewrite
+# the argocd-scoped Role/RoleBinding below into default, where they'd grant
+# nothing.
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ci-verify
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ci-verify
+  namespace: default
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["crypto-bot"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ci-verify
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: ci-verify
+    namespace: default
+roleRef:
+  kind: Role
+  name: ci-verify
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ci-verify
+  namespace: argocd
+rules:
+  - apiGroups: ["argoproj.io"]
+    resources: ["applications"]
+    resourceNames: ["crypto-bot"]
+    verbs: ["patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ci-verify
+  namespace: argocd
+subjects:
+  - kind: ServiceAccount
+    name: ci-verify
+    namespace: default
+roleRef:
+  kind: Role
+  name: ci-verify
+  apiGroup: rbac.authorization.k8s.io
+---
+# 1.24+ dropped auto-created token secrets; this is the explicit form, long-lived
+# rather than the ~1h default from `kubectl create token`, which CI would outlive.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ci-verify-token
+  namespace: default
+  annotations:
+    kubernetes.io/service-account.name: ci-verify
+type: kubernetes.io/service-account-token
