@@ -24,7 +24,6 @@ TARGETS=(
     "mlops:airflow-jwt:manifests/airflow/sealed"
     "mlops:airflow-api-secret:manifests/airflow/sealed"
     "mlops:airflow-webserver:manifests/airflow/sealed"
-    "hermes:hermes-secrets:manifests/hermes/sealed"
 )
 
 # postgres-admin is deliberately absent — it holds the Postgres superuser password
