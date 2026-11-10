@@ -57,6 +57,13 @@ spec:
           envFrom:
             - secretRef:
                 name: crypto-bot-secret
+          # Not secret, so kept here where flipping one back is a one-line revert.
+          # The whole book is held and traded on Hyperliquid, shorts included.
+          env:
+            - name: EXECUTION_VENUE
+              value: hyperliquid
+            - name: SHORTS_ENABLED
+              value: "true"
           # One asyncio loop: if it wedges the process stays Running and nothing
           # restarts it. The heartbeat stops, and this probe notices.
           livenessProbe:
